@@ -59,15 +59,21 @@ def print_banner():
 
 
 def cmd_convert(args):
-    """Convert file to markdown"""
+    """Convert file to markdown with optimizations"""
     print_banner()
 
-    # Import converter here to avoid hard dependency
+    # Import converter and optimizers
     try:
         from scripts.converters_real import MarkdownConverter
+        from scripts.optimizers import optimize_markdown, calculate_savings, check_duplicate
+        from scripts.token_counter import get_token_count, calculate_real_savings
+        from scripts.summarizer import smart_summarize
     except ImportError:
         try:
             from converters_real import MarkdownConverter
+            from optimizers import optimize_markdown, calculate_savings, check_duplicate
+            from token_counter import get_token_count, calculate_real_savings
+            from summarizer import smart_summarize
         except ImportError:
             print("Error: converters module not found")
             print("Please ensure you have all dependencies installed:")
@@ -86,6 +92,11 @@ def cmd_convert(args):
     print(f"[INFO] Converting: {file_path.name}")
     print(f"[INFO] Format: {file_ext}")
     print(f"[INFO] Mode: {args.mode}")
+    print(f"[INFO] Optimization: {args.optimize}")
+    if args.real_tokens:
+        print(f"[INFO] Token counting: REAL (Claude API)")
+    if args.summarize:
+        print(f"[INFO] Summarization: ENABLED")
     print()
 
     try:
@@ -111,26 +122,66 @@ def cmd_convert(args):
             print(f"[ERROR] Unsupported format: {file_ext}")
             sys.exit(1)
 
+        # Apply optimizations based on mode
+        optimize_flags = []
+        if args.optimize == 'all' or args.optimize == 'full':
+            optimize_flags = ['all']
+        elif args.optimize == 'basic':
+            optimize_flags = ['boilerplate', 'urls']
+        elif args.optimize == 'none':
+            optimize_flags = []
+
+        if optimize_flags and args.mode == 'ultra':
+            print(f"[OPTIMIZE] Applying optimizations: {', '.join(optimize_flags)}")
+            markdown = optimize_markdown(markdown, optimize_flags)
+
+        # Apply summarization if requested
+        if args.summarize and len(markdown) > 5000:
+            print(f"[SUMMARIZE] Enabling AI summarization...")
+            markdown = smart_summarize(markdown, enable_api=True)
+
         # Save output
         output_path = args.output or file_path.with_suffix('.md')
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(markdown)
 
         # Calculate stats
-        original_size = file_path.stat().st_size / 1024 / 1024
-        output_size = Path(output_path).stat().st_size / 1024 / 1024
+        original_size = file_path.stat().st_size
+        output_size = Path(output_path).stat().st_size
         reduction = (1 - output_size / original_size) * 100 if original_size > 0 else 0
 
-        # Estimate tokens (rough approximation)
-        estimated_tokens_original = int(file_path.stat().st_size * 0.00025)
-        estimated_tokens_after = int(Path(output_path).stat().st_size * 0.00025)
-        tokens_saved = estimated_tokens_original - estimated_tokens_after
-
-        print(f"[SUCCESS] Converted to: {output_path}")
-        print(f"[STATS] Original: {original_size:.2f} MB")
-        print(f"[STATS] Compressed: {output_size:.2f} MB")
-        print(f"[STATS] Reduction: {reduction:.1f}%")
-        print(f"[ECONOMY] Estimated tokens saved: {tokens_saved:,}")
+        # Token counting
+        if args.real_tokens:
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    original_content = f.read()
+                token_stats = calculate_real_savings(original_content, markdown)
+                print(f"[SUCCESS] Converted to: {output_path}")
+                print(f"[STATS] Original: {original_size / 1024:.1f} KB")
+                print(f"[STATS] Compressed: {output_size / 1024:.1f} KB")
+                print(f"[STATS] Reduction: {reduction:.1f}%")
+                print(f"[TOKENS] Original: {token_stats['original_tokens']:,} ({token_stats['original_method']})")
+                print(f"[TOKENS] After: {token_stats['optimized_tokens']:,} ({token_stats['optimized_method']})")
+                print(f"[ECONOMY] {token_stats['status']} tokens saved: {token_stats['tokens_saved']:,} ({token_stats['savings_percent']:.1f}%)")
+            except Exception as e:
+                print(f"[WARNING] Real token counting failed: {e}")
+                estimated_tokens_original = int(original_size * 0.00025)
+                estimated_tokens_after = int(output_size * 0.00025)
+                tokens_saved = estimated_tokens_original - estimated_tokens_after
+                print(f"[SUCCESS] Converted to: {output_path}")
+                print(f"[STATS] Original: {original_size / 1024:.1f} KB")
+                print(f"[STATS] Compressed: {output_size / 1024:.1f} KB")
+                print(f"[STATS] Reduction: {reduction:.1f}%")
+                print(f"[ECONOMY] Estimated tokens saved: {tokens_saved:,}")
+        else:
+            estimated_tokens_original = int(original_size * 0.00025)
+            estimated_tokens_after = int(output_size * 0.00025)
+            tokens_saved = estimated_tokens_original - estimated_tokens_after
+            print(f"[SUCCESS] Converted to: {output_path}")
+            print(f"[STATS] Original: {original_size / 1024:.1f} KB")
+            print(f"[STATS] Compressed: {output_size / 1024:.1f} KB")
+            print(f"[STATS] Reduction: {reduction:.1f}%")
+            print(f"[ECONOMY] Estimated tokens saved: {tokens_saved:,}")
         print()
 
     except Exception as e:
@@ -218,8 +269,15 @@ Examples:
     convert_parser.add_argument('file', help='Input file path')
     convert_parser.add_argument('-o', '--output', help='Output file path')
     convert_parser.add_argument('-m', '--mode', default='ultra',
-                                choices=['normal', 'ultra'],
+                                choices=['normal', 'ultra', 'enterprise'],
                                 help='Compression mode (default: ultra)')
+    convert_parser.add_argument('--optimize', default='all',
+                                choices=['none', 'basic', 'full', 'all'],
+                                help='Optimization level (default: all)')
+    convert_parser.add_argument('--real-tokens', action='store_true',
+                                help='Use Claude API for real token counting (requires API key)')
+    convert_parser.add_argument('--summarize', action='store_true',
+                                help='Use AI to summarize verbose content')
     convert_parser.set_defaults(func=cmd_convert)
 
     # Dashboard command
