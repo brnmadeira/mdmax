@@ -105,8 +105,10 @@ def cmd_convert(args):
         # Convert based on file type
         if file_ext == ".pdf":
             markdown = converter.pdf_to_markdown(str(file_path))
-        elif file_ext in [".xlsx", ".xls", ".xlsm"]:
+        elif file_ext in [".xlsx", ".xlsm"]:
             markdown = converter.xlsx_to_markdown(str(file_path))
+        elif file_ext == ".xls":
+            markdown = converter.xls_to_markdown(str(file_path))
         elif file_ext == ".csv":
             markdown = converter.csv_to_markdown(str(file_path))
         elif file_ext == ".json":
@@ -118,6 +120,12 @@ def cmd_convert(args):
                 markdown = f.read()
         elif file_ext in [".jpg", ".jpeg", ".png"]:
             markdown = converter.jpg_to_markdown(str(file_path))
+        elif file_ext in [".docx"]:
+            markdown = converter.docx_to_markdown(str(file_path))
+        elif file_ext in [".pptx"]:
+            markdown = converter.pptx_to_markdown(str(file_path))
+        elif file_ext in [".epub"]:
+            markdown = converter.epub_to_markdown(str(file_path))
         else:
             print(f"[ERROR] Unsupported format: {file_ext}")
             sys.exit(1)
