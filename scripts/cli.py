@@ -68,12 +68,14 @@ def cmd_convert(args):
         from scripts.optimizers import optimize_markdown, calculate_savings, check_duplicate
         from scripts.token_counter import get_token_count, calculate_real_savings
         from scripts.summarizer import smart_summarize
+        from scripts.auto_converter import auto_detect_and_convert
     except ImportError:
         try:
             from converters_real import MarkdownConverter
             from optimizers import optimize_markdown, calculate_savings, check_duplicate
             from token_counter import get_token_count, calculate_real_savings
             from summarizer import smart_summarize
+            from auto_converter import auto_detect_and_convert
         except ImportError:
             print("Error: converters module not found")
             print("Please ensure you have all dependencies installed:")
@@ -81,6 +83,12 @@ def cmd_convert(args):
             sys.exit(1)
 
     file_path = Path(args.file)
+
+    # AUTO-CONVERSION: Detect and convert .xls to .xlsx automatically
+    if file_path.suffix.lower() == ".xls":
+        print(f"[AUTO-CONVERT] 🔄 Detected legacy Excel format (.xls)")
+        file_path = Path(auto_detect_and_convert(str(file_path)))
+        print(f"[AUTO-CONVERT] ✅ File automatically converted to .xlsx")
 
     if not file_path.exists():
         print(f"[ERROR] File not found: {file_path}")
