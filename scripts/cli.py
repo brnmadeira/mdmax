@@ -69,6 +69,7 @@ def cmd_convert(args):
         from scripts.token_counter import get_token_count, calculate_real_savings
         from scripts.summarizer import smart_summarize
         from scripts.auto_converter import auto_detect_and_convert
+        from scripts.metadata_extractor import MetadataExtractor
     except ImportError:
         try:
             from converters_real import MarkdownConverter
@@ -76,6 +77,7 @@ def cmd_convert(args):
             from token_counter import get_token_count, calculate_real_savings
             from summarizer import smart_summarize
             from auto_converter import auto_detect_and_convert
+            from metadata_extractor import MetadataExtractor
         except ImportError:
             print("Error: converters module not found")
             print("Please ensure you have all dependencies installed:")
@@ -155,6 +157,40 @@ def cmd_convert(args):
         if args.summarize and len(markdown) > 5000:
             print(f"[SUMMARIZE] Enabling AI summarization...")
             markdown = smart_summarize(markdown, enable_api=True)
+
+        # FEATURE [3]: Generate metadata frontmatter
+        print(f"[METADATA] Extracting metadata and generating frontmatter...")
+        extractor = MetadataExtractor()
+
+        # Try to extract from file first
+        if file_ext in ['.xlsx', '.xls']:
+            metadata = extractor.extract_from_excel_metadata(str(file_path))
+        elif file_ext == '.pdf':
+            metadata = extractor.extract_from_pdf_metadata(str(file_path))
+        else:
+            metadata = {}
+
+        # Merge with text-based extraction
+        text_metadata = extractor.extract_from_text(markdown, file_path.name)
+        metadata.update({k: v for k, v in text_metadata.items() if k not in metadata})
+
+        # Add filename-based metadata if missing
+        filename_metadata = extractor.extract_from_filename(file_path.name)
+        if 'title' not in metadata and 'title' in filename_metadata:
+            metadata['title'] = filename_metadata['title']
+        if 'date' not in metadata and 'date' in filename_metadata:
+            metadata['date'] = filename_metadata['date']
+
+        # Add content-based tags
+        if 'tags' not in metadata or not metadata['tags']:
+            content_tags = extractor.detect_content_tags(markdown)
+            if content_tags:
+                metadata['tags'] = content_tags
+
+        # Add to markdown
+        if metadata:
+            markdown = extractor.add_frontmatter_to_markdown(markdown, metadata)
+            print(f"[METADATA] ✅ Frontmatter added: title, date, author, tags")
 
         # Save output
         output_path = args.output or file_path.with_suffix('.md')
