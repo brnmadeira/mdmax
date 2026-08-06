@@ -1,0 +1,35 @@
+# MdMax v2.1.0 - Enterprise Edition
+
+# Core dependencies
+setuptools>=65.0.0
+wheel>=0.37.0
+
+# File format support
+PyPDF2>=3.0.0
+openpyxl>=3.9.0
+python-docx>=0.8.11
+python-pptx>=0.6.21
+ebooklib>=0.18.0
+xlrd>=2.0.1
+
+# API & Web
+fastapi>=0.95.0
+uvicorn>=0.21.0
+pydantic>=1.10.0
+
+# Optional dependencies for enhanced features
+anthropic>=0.7.0  # Claude API for real token counting
+pytesseract>=0.3.10  # OCR for images (optional)
+Pillow>=9.0.0  # Image processing
+
+# Development dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+flake8>=5.0.0
+black>=23.0.0
+mypy>=1.0.0
+bandit>=1.7.0
+twine>=4.0.0
+
+# Monitoring & Logging
+requests>=2.28.0
