@@ -95,7 +95,7 @@ class MarkdownConverter:
 
     def json_to_markdown(self, file_path: str) -> str:
         """Convert JSON to Markdown (formatted JSON block)"""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
             data = json.load(f)
 
         markdown = f"""# JSON Data

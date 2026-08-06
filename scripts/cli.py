@@ -64,12 +64,15 @@ def cmd_convert(args):
 
     # Import converter here to avoid hard dependency
     try:
-        from converters_advanced import MarkdownConverter
+        from scripts.converters_real import MarkdownConverter
     except ImportError:
-        print("Error: converters_advanced module not found")
-        print("Please ensure you have all dependencies installed:")
-        print("  pip install mdmax")
-        sys.exit(1)
+        try:
+            from converters_real import MarkdownConverter
+        except ImportError:
+            print("Error: converters module not found")
+            print("Please ensure you have all dependencies installed:")
+            print("  pip install mdmax")
+            sys.exit(1)
 
     file_path = Path(args.file)
 
@@ -95,6 +98,10 @@ def cmd_convert(args):
             markdown = converter.xlsx_to_markdown(str(file_path))
         elif file_ext == ".csv":
             markdown = converter.csv_to_markdown(str(file_path))
+        elif file_ext == ".json":
+            markdown = converter.json_to_markdown(str(file_path))
+        elif file_ext == ".svg":
+            markdown = converter.svg_to_markdown(str(file_path))
         elif file_ext == ".txt":
             with open(file_path) as f:
                 markdown = f.read()
