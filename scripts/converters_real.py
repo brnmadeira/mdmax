@@ -112,33 +112,55 @@ class MarkdownConverter:
             return f.read()
 
     def xls_to_markdown(self, file_path: str) -> str:
-        """Convert old XLS format to Markdown"""
+        """Convert old XLS format to Markdown with fallback"""
         try:
             import xlrd
+            workbook = xlrd.open_workbook(file_path)
+
+            markdown_lines = []
+            for sheet_name in workbook.sheet_names():
+                sheet = workbook.sheet_by_name(sheet_name)
+                markdown_lines.append(f"## Sheet: {sheet_name}\n")
+
+                if sheet.nrows > 0:
+                    # Headers
+                    headers = sheet.row_values(0)
+                    markdown_lines.append("| " + " | ".join(str(h) for h in headers) + " |")
+                    markdown_lines.append("| " + " | ".join("---" for _ in headers) + " |")
+
+                    # Data rows
+                    for row_idx in range(1, sheet.nrows):
+                        row = sheet.row_values(row_idx)
+                        markdown_lines.append("| " + " | ".join(str(c) for c in row) + " |")
+
+                markdown_lines.append("\n")
+
+            return "\n".join(markdown_lines)
+
         except ImportError:
             raise ImportError("xlrd not installed. Run: pip install xlrd")
+        except Exception as e:
+            # Fallback: Try to read as XLSX (some .xls files are actually XLSX)
+            try:
+                from openpyxl import load_workbook
+                return self.xlsx_to_markdown(file_path)
+            except Exception:
+                # Last resort: Return file info instead of crashing
+                return f"""# XLS File: {Path(file_path).name}
 
-        markdown_lines = []
-        workbook = xlrd.open_workbook(file_path)
+## File Information
+- **File**: {Path(file_path).name}
+- **Size**: {Path(file_path).stat().st_size} bytes
+- **Format**: Excel Spreadsheet (.xls)
 
-        for sheet_name in workbook.sheet_names():
-            sheet = workbook.sheet_by_name(sheet_name)
-            markdown_lines.append(f"## Sheet: {sheet_name}\n")
+## Note
+The file could not be automatically converted. Please convert it to .xlsx format using:
+- Microsoft Excel: File > Export As > Excel Workbook
+- LibreOffice Calc: File > Save As > Microsoft Excel 2007-365 (.xlsx)
+- Online tools: https://cloudconvert.com
 
-            if sheet.nrows > 0:
-                # Headers
-                headers = sheet.row_values(0)
-                markdown_lines.append("| " + " | ".join(str(h) for h in headers) + " |")
-                markdown_lines.append("| " + " | ".join("---" for _ in headers) + " |")
-
-                # Data rows
-                for row_idx in range(1, sheet.nrows):
-                    row = sheet.row_values(row_idx)
-                    markdown_lines.append("| " + " | ".join(str(c) for c in row) + " |")
-
-            markdown_lines.append("\n")
-
-        return "\n".join(markdown_lines)
+Original error: {str(e)}
+"""
 
     def svg_to_markdown(self, file_path: str) -> str:
         """Convert SVG to Markdown (embedded)"""
