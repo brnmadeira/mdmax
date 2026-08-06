@@ -383,29 +383,37 @@ Time: 2m 15s
 
 ## Dashboard Preview
 
-### Console Output Example
+### 🎬 Real-Time Token Economy Analytics (Material Design v3)
 
-```
-====================================================
-MdMax Repository Status - 2026-08-05 16:09:07
-====================================================
-[STARS]    Total: 42
-[FORKS]    Total: 8
-[ISSUES]   Open:  2
-[WATCHERS] Total: 15
-====================================================
-Repository: https://github.com/brnmadeira/mdmax
-```
+#### Interactive Dashboard (HTML)
+**[🔗 Open Interactive Dashboard](https://brnmadeira.github.io/mdmax/docs/dashboard.html)**
 
-### HTML Dashboard (Browser)
+Acesse o dashboard interativo com gráficos em tempo real:
+- 📊 6 gráficos de economia e performance
+- 💰 Cálculo de ROI ao longo do tempo
+- 📈 Comparação antes vs depois
+- 🎨 Material Design v3 profissional
+- 📱 Responsivo para mobile
+
+#### Animated Dashboards (Material Design v3)
+
+**Token Economy Analytics:**
+![MdMax Dashboard - Animated](docs/dashboard-animated.gif)
+
+**Workflow Transformation:**
+![MdMax Workflow - Antes vs Depois](docs/workflow-animated.gif)
+
+### Dashboard Features
 
 The interactive dashboard includes:
-- Live token counter
-- Savings chart (last 30 days)
-- Format comparison bars
-- Export buttons (CSV/JSON)
-- Monthly projection graphs
-- Milestone achievements
+- ✅ Live token counter
+- ✅ Savings chart (real-time data)
+- ✅ Format comparison bars
+- ✅ ROI projections (monthly/yearly)
+- ✅ Performance metrics
+- ✅ Animated transitions
+- ✅ Material Design v3 styling
+- ✅ Dark/light mode support
 
 ---
 
