@@ -1,0 +1,49 @@
+#!/bin/bash
+# MdMax Skill for Claude Code
+
+# Get the command
+COMMAND="${1:-help}"
+
+case "$COMMAND" in
+  convert)
+    FILE="$2"
+    OUTPUT="${3:--o output.md}"
+    mdmax convert "$FILE" $OUTPUT
+    ;;
+  stats)
+    mdmax stats ${@:2}
+    ;;
+  dashboard)
+    mdmax dashboard ${@:2}
+    ;;
+  config)
+    mdmax config ${@:2}
+    ;;
+  init)
+    mdmax init
+    ;;
+  *)
+    cat << 'HELP'
+MdMax - File Converter & Token Economy Tracker
+
+Usage: /mdmax <command> [options]
+
+Commands:
+  convert <file>        Convert file to Markdown
+  stats                 Show token economy statistics
+  dashboard             Display dashboard
+  config                Manage configuration
+  init                  Initialize setup
+
+Examples:
+  /mdmax convert document.pdf
+  /mdmax convert spreadsheet.xlsx -o output.md
+  /mdmax stats
+  /mdmax dashboard
+  /mdmax config --show
+
+Supported formats (16):
+  PDF, DOCX, PPTX, XLSX, XLS, XLSM, CSV, TSV, TXT, JSON, ODS, SVG, JPG, JPEG, PNG, EPUB
+HELP
+    ;;
+esac

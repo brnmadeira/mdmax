@@ -1,10 +1,11 @@
 {
+  "version": "1.0",
   "skills": {
     "mdmax": {
       "enabled": true,
+      "auto_start": true,
       "version": "2.2.0",
-      "auto_trigger": false,
-      "formats": ["pdf", "xlsx", "xls", "xlsm", "csv", "tsv", "txt", "json", "docx", "pptx", "ods", "svg", "jpg", "jpeg", "png", "epub"]
+      "description": "Convert files to Markdown with token economy tracking"
     }
   },
   "permissions": {
