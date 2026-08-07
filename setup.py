@@ -1,20 +1,18 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="mdmax",
-    version="2.0.0",
-    author="MdMax Developer",
+    version="2.2.0",
+    author="Bruno Madeira",
     author_email="brn.madeira@gmail.com",
-    description="Compress files by 79.7% + track token economy with Claude",
+    description="Compress files by ~80% and save tokens with Claude",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/brnmadeira/mdmax",
-    packages=["scripts"],
-    package_dir={"": "."},
-    py_modules=["scripts.cli"],
+    packages=find_packages(),
     entry_points={
         "console_scripts": [
             "mdmax=scripts.cli:main",
@@ -32,25 +30,42 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "openpyxl>=3.0.0",
+        "setuptools>=65.0.0",
+        "wheel>=0.37.0",
         "PyPDF2>=3.0.0",
+        "openpyxl>=3.9.0",
+        "python-docx>=0.8.11",
+        "python-pptx>=0.6.21",
+        "xlrd>=2.0.1",
+        "requests>=2.28.0",
     ],
     extras_require={
-        "ocr": ["pytesseract>=0.3.10", "pillow>=9.0.0"],
-        "epub": ["ebooklib>=0.18"],
-        "docx": ["python-docx>=0.8.10"],
-        "pptx": ["python-pptx>=0.6.20"],
-        "xls": ["xlrd>=2.0.0"],
-        "dev": ["pytest>=7.0.0", "pytest-cov>=3.0.0"],
+        "api": [
+            "fastapi>=0.95.0",
+            "uvicorn>=0.21.0",
+            "pydantic>=1.10.0",
+        ],
+        "epub": [
+            "ebooklib>=0.18.0",
+        ],
+        "ocr": [
+            "Pillow>=9.0.0",
+        ],
         "all": [
-            "pytesseract>=0.3.10",
-            "pillow>=9.0.0",
-            "ebooklib>=0.18",
-            "python-docx>=0.8.10",
-            "python-pptx>=0.6.20",
-            "xlrd>=2.0.0",
+            "fastapi>=0.95.0",
+            "uvicorn>=0.21.0",
+            "pydantic>=1.10.0",
+            "ebooklib>=0.18.0",
+            "Pillow>=9.0.0",
             "pytest>=7.0.0",
-            "pytest-cov>=3.0.0",
+            "pytest-cov>=4.0.0",
+        ],
+        "dev": [
+            "pytest>=7.0.0",
+            "pytest-cov>=4.0.0",
+            "flake8>=5.0.0",
+            "black>=23.0.0",
+            "mypy>=1.0.0",
         ],
     },
     keywords="markdown pdf excel spreadsheet conversion token economy claude",
