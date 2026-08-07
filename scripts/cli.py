@@ -68,7 +68,6 @@ def cmd_convert(args):
         from scripts.optimizers import optimize_markdown, calculate_savings, check_duplicate
         from scripts.token_counter import get_token_count, calculate_real_savings
         from scripts.summarizer import smart_summarize
-        from scripts.auto_converter import auto_detect_and_convert
         from scripts.metadata_extractor import MetadataExtractor
     except ImportError:
         try:
@@ -76,7 +75,6 @@ def cmd_convert(args):
             from optimizers import optimize_markdown, calculate_savings, check_duplicate
             from token_counter import get_token_count, calculate_real_savings
             from summarizer import smart_summarize
-            from auto_converter import auto_detect_and_convert
             from metadata_extractor import MetadataExtractor
         except ImportError:
             print("Error: converters module not found")
