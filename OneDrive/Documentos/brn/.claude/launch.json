@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "mdmax-cli",
+      "name": "mdmax",
       "runtimeExecutable": "mdmax",
       "runtimeArgs": ["--help"],
-      "port": 8000
+      "autostart": true
     }
   ]
 }

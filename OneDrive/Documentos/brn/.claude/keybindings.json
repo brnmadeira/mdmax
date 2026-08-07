@@ -1,0 +1,9 @@
+{
+  "bindings": [
+    {
+      "key": "ctrl+m",
+      "command": "mdmax",
+      "description": "Run mdmax"
+    }
+  ]
+}
