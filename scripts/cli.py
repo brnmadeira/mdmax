@@ -244,14 +244,14 @@ def cmd_dashboard(args):
     print_banner()
 
     try:
-        from dashboard_advanced import DashboardGenerator
+        from dashboard import DashboardGenerator
 
         dashboard = DashboardGenerator()
 
         if args.format == "console":
-            dashboard.print_console_dashboard_advanced()
+            dashboard.print_console_dashboard()
         elif args.format == "json":
-            dashboard.generate_html_dashboard_advanced()
+            dashboard.generate_html_dashboard()
             print("[INFO] Dashboard saved to: dashboard.html")
 
     except Exception as e:
