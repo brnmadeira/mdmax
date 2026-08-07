@@ -3,9 +3,11 @@
   "skills": {
     "mdmax": {
       "enabled": true,
-      "auto_start": true,
+      "auto_trigger": true,
+      "auto_execute": true,
       "version": "2.2.0",
-      "description": "Convert files to Markdown with token economy tracking"
+      "description": "Auto-converts 16 file formats to Markdown with token tracking",
+      "formats": ["pdf", "xlsx", "xls", "xlsm", "csv", "tsv", "txt", "json", "docx", "pptx", "ods", "svg", "jpg", "jpeg", "png", "epub"]
     }
   },
   "permissions": {
@@ -15,21 +17,5 @@
       "bash_execute": true,
       "python_execute": true
     }
-  },
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 C:\Users\marke\.claude\validate-response.py",
-            "statusMessage": "🛡️ Validando transparência...",
-            "timeout": 5,
-            "async": false
-          }
-        ]
-      }
-    ]
   }
 }
