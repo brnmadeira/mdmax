@@ -1,0 +1,36 @@
+﻿{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:\\Users\\marke\\.claude\\validate-response.py",
+            "statusMessage": "🛡️ Validando transparência...",
+            "timeout": 5,
+            "async": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "skills": {
+    "mdmax": {
+      "enabled": true,
+      "version": "2.2.0",
+      "auto_trigger": false,
+      "formats": ["pdf", "xlsx", "xls", "xlsm", "csv", "tsv", "txt", "json", "docx", "pptx", "ods", "svg", "jpg", "jpeg", "png", "epub"]
+    }
+  },
+  "permissions": {
+    "mdmax": {
+      "file_read": true,
+      "file_write": true,
+      "bash_execute": true,
+      "python_execute": true
+    }
+  }
+}
