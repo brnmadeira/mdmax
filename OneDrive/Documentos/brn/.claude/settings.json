@@ -5,9 +5,18 @@
       "enabled": true,
       "auto_trigger": true,
       "auto_execute": true,
+      "aggressive_mode": true,
+      "priority": "high",
       "version": "2.2.0",
       "description": "Auto-converts 16 file formats to Markdown with token tracking",
-      "formats": ["pdf", "xlsx", "xls", "xlsm", "csv", "tsv", "txt", "json", "docx", "pptx", "ods", "svg", "jpg", "jpeg", "png", "epub"]
+      "formats": [
+        "pdf", "xlsx", "xls", "xlsm", "csv", "tsv", "txt", "json",
+        "docx", "pptx", "ods", "svg", "jpg", "jpeg", "png", "epub"
+      ],
+      "trigger_keywords": [
+        "CSV", "PDF", "Excel", "arquivo", "planilha", "documento",
+        "convert", "analyze", "process", "comprimir", "converter"
+      ]
     }
   },
   "permissions": {
@@ -15,7 +24,17 @@
       "file_read": true,
       "file_write": true,
       "bash_execute": true,
-      "python_execute": true
+      "python_execute": true,
+      "auto_trigger_on_file_mention": true
     }
+  },
+  "hooks": {
+    "OnFileMention": [
+      {
+        "matcher": "\.(pdf|xlsx|xls|xlsm|csv|tsv|txt|json|docx|pptx|ods|svg|jpg|jpeg|png|epub)",
+        "action": "trigger_skill",
+        "skill": "mdmax"
+      }
+    ]
   }
 }

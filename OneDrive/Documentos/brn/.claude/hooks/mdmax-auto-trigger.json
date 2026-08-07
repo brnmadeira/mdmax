@@ -1,0 +1,13 @@
+{
+  "name": "mdmax-auto-trigger",
+  "type": "auto-trigger",
+  "description": "Auto-triggers MdMax on file mentions",
+  "patterns": [
+    "\.(pdf|xlsx|xls|xlsm|csv|tsv|txt|json|docx|pptx|ods|svg|jpg|jpeg|png|epub)\b",
+    "(?:CSV|PDF|Excel|Excel|arquivo|planilha)"
+  ],
+  "trigger": {
+    "skill": "mdmax",
+    "auto_execute": true
+  }
+}
