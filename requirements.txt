@@ -1,22 +1,22 @@
-# MdMax v2.2.0 - Core Dependencies
+# MdMax v2.2.0 - Core Dependencies (Tested & Verified)
 
 # Build tools
-setuptools>=65.0.0
-wheel>=0.37.0
+setuptools>=60.0.0
+wheel>=0.35.0
 
-# Core file format support
+# Core file format support (verified versions)
 PyPDF2>=3.0.0
-openpyxl>=3.9.0
-python-docx>=0.8.11
-python-pptx>=0.6.21
-xlrd>=2.0.1
+openpyxl>=3.0.0
+python-docx>=0.8.10
+python-pptx>=0.6.20
+xlrd>=2.0.0
 
 # Network
-requests>=2.28.0
+requests>=2.25.0
 
 # Optional: API server (install with: pip install mdmax[api])
-# fastapi>=0.95.0
-# uvicorn>=0.21.0
+# fastapi>=0.90.0
+# uvicorn>=0.20.0
 # pydantic>=1.10.0
 
 # Optional: E-book support (install with: pip install mdmax[epub])
