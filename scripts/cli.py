@@ -244,7 +244,7 @@ def cmd_dashboard(args):
     print_banner()
 
     try:
-        from dashboard import DashboardGenerator
+        from scripts.dashboard import DashboardGenerator
 
         dashboard = DashboardGenerator()
 
