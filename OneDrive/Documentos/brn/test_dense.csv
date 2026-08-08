@@ -1,0 +1,11 @@
+ID,Name,Email,Phone,Company,Status,City,Country,Rating,Notes
+1,Person 1,person1@example.com,+1-555-0001,Company 1,Active,NYC,USA,5,Note for person 1Note for person 1Note for person 1Note for person 1Note for person 1
+2,Person 2,person2@example.com,+1-555-0002,Company 2,Inactive,LA,Canada,3,Note for person 2Note for person 2Note for person 2Note for person 2Note for person 2
+3,Person 3,person3@example.com,+1-555-0003,Company 3,Pending,CHI,Mexico,4,Note for person 3Note for person 3Note for person 3Note for person 3Note for person 3
+4,Person 4,person4@example.com,+1-555-0004,Company 4,Active,NYC,USA,2,Note for person 4Note for person 4Note for person 4Note for person 4Note for person 4
+5,Person 5,person5@example.com,+1-555-0005,Company 5,Inactive,LA,Canada,1,Note for person 5Note for person 5Note for person 5Note for person 5Note for person 5
+6,Person 6,person6@example.com,+1-555-0006,Company 6,Pending,CHI,Mexico,5,Note for person 6Note for person 6Note for person 6Note for person 6Note for person 6
+7,Person 7,person7@example.com,+1-555-0007,Company 7,Active,NYC,USA,4,Note for person 7Note for person 7Note for person 7Note for person 7Note for person 7
+8,Person 8,person8@example.com,+1-555-0008,Company 8,Inactive,LA,Canada,3,Note for person 8Note for person 8Note for person 8Note for person 8Note for person 8
+9,Person 9,person9@example.com,+1-555-0009,Company 9,Pending,CHI,Mexico,2,Note for person 9Note for person 9Note for person 9Note for person 9Note for person 9
+10,Person 10,person10@example.com,+1-555-0010,Company 10,Active,NYC,USA,1,Note for person 10Note for person 10Note for person 10Note for person 10Note for person 10
