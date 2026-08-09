@@ -8,6 +8,6 @@
   ],
   "trigger": {
     "skill": "mdmax",
-    "auto_execute": true
+    "auto_execute": false
   }
 }
