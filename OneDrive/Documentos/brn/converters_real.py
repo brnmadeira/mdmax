@@ -218,12 +218,12 @@ Original error: {str(e)}
             import pytesseract
             from PIL import Image
 
-            img = Image.open(file_path)
-            text = pytesseract.image_to_string(img)
+            with Image.open(file_path) as img:
+                text = pytesseract.image_to_string(img)
 
-            if text.strip():
-                markdown += "## Extracted Text\n\n"
-                markdown += text
+                if text.strip():
+                    markdown += "## Extracted Text\n\n"
+                    markdown += text
         except ImportError:
             markdown += "*(Install pytesseract + Tesseract for OCR support)*\n"
         except Exception as e:
@@ -244,15 +244,19 @@ Original error: {str(e)}
         markdown_lines = []
         book = epub.read_epub(file_path)
 
+        # ebooklib item type constants: 0=NCX, 1=CSS, 2=Image, 3=XHTML, 4=Other
+        EPUB_ITEM_TYPE_XHTML = 3
+
         for item in book.get_items():
-            if item.get_type() == 3:  # XHTML document
+            if item.get_type() == EPUB_ITEM_TYPE_XHTML:
                 try:
                     content = item.get_content().decode('utf-8', errors='replace')
-                except (UnicodeDecodeError, AttributeError):
-                    # Fallback para latin-1 ou conversão
+                except (UnicodeDecodeError, AttributeError) as e:
+                    # Fallback para latin-1
                     try:
                         content = item.get_content().decode('latin-1', errors='replace')
-                    except:
+                    except Exception as fallback_err:
+                        # Skip this item if both decodings fail
                         continue
                 # Simple strip HTML tags
                 text = re.sub(r'<[^>]+>', '', content)

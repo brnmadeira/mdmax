@@ -6,6 +6,7 @@ Falls back to estimation if API unavailable
 """
 
 import json
+import hashlib
 from pathlib import Path
 from typing import Optional
 
@@ -50,7 +51,7 @@ def count_real_tokens(text: str) -> Optional[int]:
 
     Returns None if API unavailable, falls back to estimation
 
-    Requirements:
+    Requirements: Uses SHA256 for cache keys (not Python's hash() which is randomized)
     - ANTHROPIC_API_KEY environment variable
     - anthropic package installed
 
@@ -64,8 +65,9 @@ def count_real_tokens(text: str) -> Optional[int]:
 
     # Check cache first
     cache = load_token_cache()
-    text_hash = hash(text) % 1000000  # Simple hash
-    cache_key = f"hash_{text_hash}"
+    # Use SHA256 for reliable cache keys (not Python's hash() which is randomized per session)
+    text_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
+    cache_key = f"tokens_{text_hash}"
 
     if cache_key in cache:
         return cache[cache_key]

@@ -116,6 +116,11 @@ def cmd_convert(args):
         print(f"[ERROR] File not found: {file_path}")
         sys.exit(1)
 
+    # Validate it's actually a file, not a directory
+    if not file_path.is_file():
+        print(f"[ERROR] Not a file (is a {file_path.stat().st_mode}): {file_path}")
+        sys.exit(1)
+
     print(f"[INFO] Converting: {file_path.name}")
     print(f"[INFO] Format: {file_ext}")
     print(f"[INFO] Mode: {args.mode}")
@@ -263,6 +268,12 @@ def cmd_convert(args):
         # Save output (don't override if already set for JSON conversion)
         if output_path is None:
             output_path = args.output or file_path.with_suffix('.md')
+
+        # Validate output path to prevent directory traversal
+        output_path = Path(output_path).resolve()  # Resolve to absolute path
+        if not output_path.parent.exists():
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(markdown)
 
