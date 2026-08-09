@@ -134,6 +134,7 @@ def cmd_convert(args):
     # SMART DETECTION: Analyze density for Excel/CSV files (default: use Markdown)
     use_json_format = False
     output_path = None  # Initialize to prevent undefined variable errors
+    json_already_saved = False  # Flag to prevent overwriting JSON with markdown stub
 
     if file_ext in [".xlsx", ".xlsm", ".xls", ".csv"]:
         print(f"[SMART] Analyzing file density...")
@@ -163,9 +164,9 @@ def cmd_convert(args):
                 smart_analyzer = SmartConverter()
                 result = smart_analyzer.excel_to_json(str(file_path), str(json_output))
                 print(f"[CONVERT] [OK] Converted to JSON: {result['rows_converted']} rows")
-                markdown = f"# Conversion Details\n\n- Rows: {result['rows_converted']}\n- Output: {json_output}"
                 output_path = json_output
-                # Skip to saving/stats section
+                json_already_saved = True  # JSON already written, don't overwrite with markdown
+                markdown = ""  # Placeholder for stats calculation
             else:
                 markdown = converter.xlsx_to_markdown(str(file_path))
         elif file_ext == ".xls":
@@ -175,8 +176,9 @@ def cmd_convert(args):
                 smart_analyzer = SmartConverter()
                 result = smart_analyzer.excel_to_json(str(file_path), str(json_output))
                 print(f"[CONVERT] [OK] Converted to JSON: {result['rows_converted']} rows")
-                markdown = f"# Conversion Details\n\n- Rows: {result['rows_converted']}\n- Output: {json_output}"
                 output_path = json_output
+                json_already_saved = True  # JSON already written, don't overwrite with markdown
+                markdown = ""  # Placeholder for stats calculation
             else:
                 markdown = converter.xls_to_markdown(str(file_path))
         elif file_ext == ".csv":
@@ -186,8 +188,9 @@ def cmd_convert(args):
                 smart_analyzer = SmartConverter()
                 result = smart_analyzer.excel_to_json(str(file_path), str(json_output))
                 print(f"[CONVERT] [OK] Converted to JSON: {result['rows_converted']} rows")
-                markdown = f"# Conversion Details\n\n- Rows: {result['rows_converted']}\n- Output: {json_output}"
                 output_path = json_output
+                json_already_saved = True  # JSON already written, don't overwrite with markdown
+                markdown = ""  # Placeholder for stats calculation
             else:
                 markdown = converter.csv_to_markdown(str(file_path))
         elif file_ext == ".json":
@@ -265,17 +268,22 @@ def cmd_convert(args):
             markdown = extractor.add_frontmatter_to_markdown(markdown, metadata)
             print(f"[METADATA] [OK] Frontmatter added: title, date, author, tags")
 
-        # Save output (don't override if already set for JSON conversion)
-        if output_path is None:
-            output_path = args.output or file_path.with_suffix('.md')
+        # Save output (skip if JSON already saved)
+        if not json_already_saved:
+            if output_path is None:
+                output_path = args.output or file_path.with_suffix('.md')
 
-        # Validate output path to prevent directory traversal
-        output_path = Path(output_path).resolve()  # Resolve to absolute path
-        if not output_path.parent.exists():
-            output_path.parent.mkdir(parents=True, exist_ok=True)
+            # Validate output path to prevent directory traversal
+            output_path = Path(output_path).resolve()  # Resolve to absolute path
+            if not output_path.parent.exists():
+                output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(markdown)
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(markdown)
+        else:
+            # JSON already saved, markdown contains just a stub
+            # Use the actual output_path (JSON file) for stats
+            pass
 
         # Calculate stats
         original_size = file_path.stat().st_size
@@ -287,7 +295,13 @@ def cmd_convert(args):
             try:
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     original_content = f.read()
-                token_stats = calculate_real_savings(original_content, markdown)
+                # For JSON output, read the actual file content for token counting
+                if json_already_saved:
+                    with open(output_path, 'r', encoding='utf-8') as f:
+                        output_content = f.read()
+                else:
+                    output_content = markdown
+                token_stats = calculate_real_savings(original_content, output_content)
                 print(f"[SUCCESS] Converted to: {output_path}")
                 print(f"[STATS] Original: {original_size / 1024:.1f} KB")
                 print(f"[STATS] Compressed: {output_size / 1024:.1f} KB")
@@ -443,14 +457,14 @@ Examples:
     # If no command specified, show help
     if not args.command:
         parser.print_help()
-        sys.exit(0)
+        sys.exit(2)  # argparse convention: 2 for missing required argument
 
     # Execute command
     try:
         args.func(args)
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user")
-        sys.exit(0)
+        sys.exit(130)  # Standard exit code: 128 + SIGINT(2) = 130
     except Exception as e:
         print(f"\n[ERROR] {str(e)}")
         sys.exit(1)

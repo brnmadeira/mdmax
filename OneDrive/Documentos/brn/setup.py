@@ -1,7 +1,22 @@
 from setuptools import setup, find_packages
+from pathlib import Path
 
-with open("README.md", "r", encoding="utf-8") as fh:
+# Get the project root directory
+project_root = Path(__file__).resolve().parent
+
+with open(project_root / "README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
+
+# List all packages properly
+packages = ["mdmax"] + [f"mdmax.{pkg}" for pkg in find_packages("mdmax")] if (project_root / "mdmax").exists() else []
+if not packages or packages == ["mdmax"]:
+    # Fallback: single module, not a package
+    packages = []
+    py_modules = ["mdmax"]
+    entry_point = "mdmax:main"
+else:
+    py_modules = []
+    entry_point = "mdmax.cli:main"
 
 setup(
     name="mdmax",
@@ -12,10 +27,11 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/brnmadeira/mdmax",
-    packages=find_packages(),
+    packages=packages,
+    py_modules=py_modules,
     entry_points={
         "console_scripts": [
-            "mdmax=scripts.cli:main",
+            f"mdmax={entry_point}",
         ],
     },
     classifiers=[
