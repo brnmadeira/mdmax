@@ -67,20 +67,26 @@ def run_mdmax_command(args):
         # Validate arguments first
         validate_args(args)
 
+        # Check if mdmax binary exists (prevent binary planting)
+        mdmax_path = shutil.which("mdmax")
+        if not mdmax_path:
+            raise FileNotFoundError("mdmax binary not found in PATH")
+
         result = subprocess.run(
-            ["mdmax"] + args,
+            [mdmax_path] + args,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=DEFAULT_TIMEOUT,
             encoding="utf-8",
             errors="replace"
         )
         
         return {
             "status": "success" if result.returncode == 0 else "error",
+            "returncode": result.returncode,
             "stdout": result.stdout,
             "stderr": result.stderr,
-            "returncode": result.returncode
+            "message": "Command executed successfully" if result.returncode == 0 else "Command failed"
         }
     except ValueError as e:
         # Validation error (command not allowed, path escaping, etc)
