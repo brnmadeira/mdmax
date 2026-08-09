@@ -21,7 +21,8 @@ class DashboardGenerator:
             try:
                 with open(ECONOMY_FILE, 'r', encoding='utf-8') as f:
                     return json.load(f)
-            except:
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"[WARNING] Failed to load stats: {e}")
                 return self.default_stats()
         return self.default_stats()
     
@@ -61,7 +62,8 @@ class DashboardGenerator:
         """Generate HTML dashboard"""
         total = self.stats.get("total_tokens_saved", 0)
         conversions = self.stats.get("conversions", 0)
-        
+        avg_saving = f"{total/conversions:,.0f}" if conversions > 0 else "N/A"
+
         html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -89,7 +91,7 @@ class DashboardGenerator:
         </div>
         <div class="stat">
             <div class="stat-label">Average Saving</div>
-            <div class="stat-value">{total/conversions:,.0f} tokens/file</div>
+            <div class="stat-value">{avg_saving} tokens/file</div>
         </div>
     </div>
 </body>

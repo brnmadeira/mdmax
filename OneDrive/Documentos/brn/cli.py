@@ -10,7 +10,7 @@ from pathlib import Path
 from datetime import datetime
 import json
 
-__version__ = "2.0.0"
+__version__ = "2.2.0"
 
 # Configuration directory
 CONFIG_DIR = Path.home() / ".mdmax"
@@ -39,15 +39,22 @@ def ensure_config():
                 ".jpg", ".jpeg", ".png", ".svg", ".epub"
             ]
         }
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump(default_config, f, indent=2)
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(default_config, f, indent=2, ensure_ascii=False)
 
 
 def load_config():
     """Load configuration"""
     ensure_config()
-    with open(CONFIG_FILE) as f:
-        return json.load(f)
+    try:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        print("[WARNING] Config file corrupted, resetting to defaults")
+        Path(CONFIG_FILE).unlink(missing_ok=True)
+        ensure_config()
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
 
 
 def print_banner():
@@ -104,12 +111,6 @@ def cmd_convert(args):
             print("[WARNING] OCR support (pytesseract) not installed")
             print("[INFO] Install with: pip install pytesseract")
             print("[INFO] Also requires Tesseract-OCR from: https://github.com/UB-Mannheim/tesseract/wiki")
-
-    # AUTO-CONVERSION: Detect and convert .xls to .xlsx automatically
-    if file_ext == ".xls":
-        print(f"[AUTO-CONVERT] 🔄 Detected legacy Excel format (.xls)")
-        file_path = Path(auto_detect_and_convert(str(file_path)))
-        print(f"[AUTO-CONVERT] [OK] File automatically converted to .xlsx")
 
     if not file_path.exists():
         print(f"[ERROR] File not found: {file_path}")
@@ -336,14 +337,18 @@ def cmd_config(args):
     ensure_config()
 
     if args.show:
-        with open(CONFIG_FILE) as f:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             config = json.load(f)
         print("Current configuration:")
-        print(json.dumps(config, indent=2))
+        print(json.dumps(config, indent=2, ensure_ascii=False))
     elif args.reset:
-        os.remove(CONFIG_FILE)
-        ensure_config()
-        print("[SUCCESS] Configuration reset to defaults")
+        try:
+            Path(CONFIG_FILE).unlink(missing_ok=True)
+            ensure_config()
+            print("[SUCCESS] Configuration reset to defaults")
+        except Exception as e:
+            print(f"[ERROR] Failed to reset config: {e}")
+            sys.exit(1)
 
 
 def cmd_version(args):

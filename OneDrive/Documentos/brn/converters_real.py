@@ -226,8 +226,9 @@ Original error: {str(e)}
                 markdown += text
         except ImportError:
             markdown += "*(Install pytesseract + Tesseract for OCR support)*\n"
-        except Exception:
-            pass
+        except Exception as e:
+            # OCR failed, but conversion can proceed without it
+            markdown += f"*(OCR failed: {type(e).__name__})*\n"
 
         return markdown
 
