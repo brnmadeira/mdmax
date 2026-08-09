@@ -10,6 +10,7 @@ import json
 import shutil
 import os
 from pathlib import Path
+from typing import List, Dict, Any
 
 # Allowed subcommands (whitelist)
 ALLOWED_COMMANDS = {"convert", "dashboard", "config", "init", "version"}
@@ -27,7 +28,7 @@ PROTECTED_PATHS = {
 # Timeout configurável via env var
 DEFAULT_TIMEOUT = int(os.getenv("MDMAX_TIMEOUT", "120"))
 
-def validate_args(args):
+def validate_args(args: List[str]) -> bool:
     """Validate command and arguments for security"""
     if not args:
         raise ValueError("No command specified")
@@ -61,7 +62,7 @@ def validate_args(args):
 
     return True
 
-def run_mdmax_command(args):
+def run_mdmax_command(args: List[str]) -> Dict[str, Any]:
     """Execute MdMax command"""
     try:
         # Validate arguments first
