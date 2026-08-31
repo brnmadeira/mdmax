@@ -17,6 +17,27 @@ CONFIG_DIR = Path.home() / ".mdmax"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 CACHE_DIR = CONFIG_DIR / "cache"
 STATE_FILE = CONFIG_DIR / "state.json"
+ECONOMY_LOG = CONFIG_DIR / "economy.jsonl"
+
+
+def log_conversion(filename: str, file_format: str, input_bytes: int, output_bytes: int,
+                    input_tokens: int, output_tokens: int):
+    """Append one conversion record so the dashboard reflects real usage"""
+    record = {
+        "timestamp": datetime.now().isoformat(),
+        "filename": filename,
+        "format": file_format,
+        "input_bytes": input_bytes,
+        "output_bytes": output_bytes,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "savings_bytes": input_bytes - output_bytes,
+        "savings_tokens": input_tokens - output_tokens,
+        "savings_pct": round((1 - output_tokens / input_tokens) * 100, 1) if input_tokens > 0 else 0.0,
+    }
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    with open(ECONOMY_LOG, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(record) + "\n")
 
 
 def ensure_config():
@@ -84,12 +105,6 @@ def cmd_convert(args):
 
     file_path = Path(args.file)
 
-    # AUTO-CONVERSION: Detect and convert .xls to .xlsx automatically
-    if file_path.suffix.lower() == ".xls":
-        print(f"[AUTO-CONVERT] 🔄 Detected legacy Excel format (.xls)")
-        file_path = Path(auto_detect_and_convert(str(file_path)))
-        print(f"[AUTO-CONVERT] ✅ File automatically converted to .xlsx")
-
     if not file_path.exists():
         print(f"[ERROR] File not found: {file_path}")
         sys.exit(1)
@@ -119,6 +134,10 @@ def cmd_convert(args):
             markdown = converter.xls_to_markdown(str(file_path))
         elif file_ext == ".csv":
             markdown = converter.csv_to_markdown(str(file_path))
+        elif file_ext == ".tsv":
+            markdown = converter.tsv_to_markdown(str(file_path))
+        elif file_ext == ".ods":
+            markdown = converter.ods_to_markdown(str(file_path))
         elif file_ext == ".json":
             markdown = converter.json_to_markdown(str(file_path))
         elif file_ext == ".svg":
@@ -185,20 +204,35 @@ def cmd_convert(args):
             if content_tags:
                 metadata['tags'] = content_tags
 
-        # Add to markdown
+        # Add frontmatter only if it doesn't make an oversized file worse
+        original_size = file_path.stat().st_size
         if metadata:
-            markdown = extractor.add_frontmatter_to_markdown(markdown, metadata)
-            print(f"[METADATA] ✅ Frontmatter added: title, date, author, tags")
+            candidate = extractor.add_frontmatter_to_markdown(markdown, metadata)
+            current_size = len(markdown.encode('utf-8'))
+            candidate_size = len(candidate.encode('utf-8'))
+            if candidate_size <= original_size or candidate_size <= current_size:
+                markdown = candidate
+                print(f"[METADATA] Frontmatter added: {', '.join(k for k in ('title', 'author', 'date', 'tags') if k in metadata)}")
+            else:
+                print(f"[METADATA] Frontmatter skipped (would only add overhead for this file)")
 
         # Save output
         output_path = args.output or file_path.with_suffix('.md')
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(markdown)
 
-        # Calculate stats
-        original_size = file_path.stat().st_size
+        # Calculate stats - never report savings that don't exist
         output_size = Path(output_path).stat().st_size
-        reduction = (1 - output_size / original_size) * 100 if original_size > 0 else 0
+        no_savings_reason = None
+        if output_size >= original_size:
+            no_savings_reason = "conversion format overhead is not smaller than the original file"
+            reduction = 0.0
+        else:
+            reduction = (1 - output_size / original_size) * 100 if original_size > 0 else 0
+
+        tokens_saved_estimate = 0 if no_savings_reason else (
+            int(original_size * 0.00025) - int(output_size * 0.00025)
+        )
 
         # Token counting
         if args.real_tokens:
@@ -206,33 +240,44 @@ def cmd_convert(args):
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     original_content = f.read()
                 token_stats = calculate_real_savings(original_content, markdown)
+                real_tokens_saved = 0 if no_savings_reason else token_stats['tokens_saved']
+                real_savings_percent = 0.0 if no_savings_reason else token_stats['savings_percent']
                 print(f"[SUCCESS] Converted to: {output_path}")
                 print(f"[STATS] Original: {original_size / 1024:.1f} KB")
                 print(f"[STATS] Compressed: {output_size / 1024:.1f} KB")
                 print(f"[STATS] Reduction: {reduction:.1f}%")
                 print(f"[TOKENS] Original: {token_stats['original_tokens']:,} ({token_stats['original_method']})")
                 print(f"[TOKENS] After: {token_stats['optimized_tokens']:,} ({token_stats['optimized_method']})")
-                print(f"[ECONOMY] {token_stats['status']} tokens saved: {token_stats['tokens_saved']:,} ({token_stats['savings_percent']:.1f}%)")
+                print(f"[ECONOMY] {token_stats['status']} tokens saved: {real_tokens_saved:,} ({real_savings_percent:.1f}%)")
+                if no_savings_reason:
+                    print(f"[INFO] No compression achieved: {no_savings_reason}")
             except Exception as e:
                 print(f"[WARNING] Real token counting failed: {e}")
-                estimated_tokens_original = int(original_size * 0.00025)
-                estimated_tokens_after = int(output_size * 0.00025)
-                tokens_saved = estimated_tokens_original - estimated_tokens_after
                 print(f"[SUCCESS] Converted to: {output_path}")
                 print(f"[STATS] Original: {original_size / 1024:.1f} KB")
                 print(f"[STATS] Compressed: {output_size / 1024:.1f} KB")
                 print(f"[STATS] Reduction: {reduction:.1f}%")
-                print(f"[ECONOMY] Estimated tokens saved: {tokens_saved:,}")
+                print(f"[ECONOMY] Estimated tokens saved: {tokens_saved_estimate:,}")
+                if no_savings_reason:
+                    print(f"[INFO] No compression achieved: {no_savings_reason}")
         else:
-            estimated_tokens_original = int(original_size * 0.00025)
-            estimated_tokens_after = int(output_size * 0.00025)
-            tokens_saved = estimated_tokens_original - estimated_tokens_after
             print(f"[SUCCESS] Converted to: {output_path}")
             print(f"[STATS] Original: {original_size / 1024:.1f} KB")
             print(f"[STATS] Compressed: {output_size / 1024:.1f} KB")
             print(f"[STATS] Reduction: {reduction:.1f}%")
-            print(f"[ECONOMY] Estimated tokens saved: {tokens_saved:,}")
+            print(f"[ECONOMY] Estimated tokens saved: {tokens_saved_estimate:,}")
+            if no_savings_reason:
+                print(f"[INFO] No compression achieved: {no_savings_reason}")
         print()
+
+        try:
+            input_tokens = int(original_size * 0.00025)
+            output_tokens = input_tokens if no_savings_reason else int(output_size * 0.00025)
+            log_conversion(file_path.name, file_ext.lstrip('.'), original_size,
+                            original_size if no_savings_reason else output_size,
+                            input_tokens, output_tokens)
+        except Exception:
+            pass
 
     except Exception as e:
         print(f"[ERROR] Conversion failed: {str(e)}")
@@ -292,6 +337,10 @@ def cmd_init(args):
 
 def main():
     """Main entry point"""
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
     parser = argparse.ArgumentParser(
         description="MdMax - Compress files by 79.7% and track token economy",
         formatter_class=argparse.RawDescriptionHelpFormatter,
