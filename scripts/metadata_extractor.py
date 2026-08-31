@@ -14,11 +14,23 @@ import json
 class MetadataExtractor:
     """Extract metadata from documents and generate YAML frontmatter"""
 
+    PLACEHOLDER_VALUES = {'untitled', 'anonymous', 'unspecified', 'unknown', 'none', ''}
+
+    def _is_placeholder(self, value) -> bool:
+        """Detect generator defaults (e.g. reportlab's 'untitled'/'anonymous') that aren't real metadata"""
+        return not value or str(value).strip().lower() in self.PLACEHOLDER_VALUES
+
+    def _normalize_pdf_date(self, date_str: str) -> str:
+        """PDF dates look like D:20260831095856-03'00' - pull out YYYY-MM-DD"""
+        match = re.search(r'D:(\d{4})(\d{2})(\d{2})', str(date_str))
+        if match:
+            return f"{match.group(1)}-{match.group(2)}-{match.group(3)}"
+        return self._normalize_date(str(date_str))
+
     def __init__(self):
         self.common_patterns = {
             'author': [
-                r'(?:author|by|from|de)\s*:?\s*([^,\n]+)',
-                r'(?:author|written by|criado por)\s*([^\n]+)',
+                r'(?im)^\s*(?:author|by|from|de|written by|criado por)\s*:\s*(.+)$',
             ],
             'date': [
                 r'(?:date|data|created|data de criação)\s*:?\s*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
@@ -76,13 +88,13 @@ class MetadataExtractor:
             props = wb.properties
 
             metadata = {}
-            if props.title:
+            if props.title and not self._is_placeholder(props.title):
                 metadata['title'] = props.title
-            if props.author:
+            if props.author and not self._is_placeholder(props.author):
                 metadata['author'] = props.author
             if props.created:
                 metadata['date'] = props.created.strftime('%Y-%m-%d')
-            if props.subject:
+            if props.subject and not self._is_placeholder(props.subject):
                 metadata['tags'] = [props.subject]
             if props.keywords:
                 metadata['tags'] = props.keywords.split(',')
@@ -101,13 +113,13 @@ class MetadataExtractor:
                 if reader.metadata:
                     metadata = {}
 
-                    if reader.metadata.get('/Title'):
+                    if reader.metadata.get('/Title') and not self._is_placeholder(reader.metadata.get('/Title')):
                         metadata['title'] = reader.metadata['/Title']
-                    if reader.metadata.get('/Author'):
+                    if reader.metadata.get('/Author') and not self._is_placeholder(reader.metadata.get('/Author')):
                         metadata['author'] = reader.metadata['/Author']
                     if reader.metadata.get('/CreationDate'):
-                        metadata['date'] = reader.metadata['/CreationDate']
-                    if reader.metadata.get('/Subject'):
+                        metadata['date'] = self._normalize_pdf_date(reader.metadata['/CreationDate'])
+                    if reader.metadata.get('/Subject') and not self._is_placeholder(reader.metadata.get('/Subject')):
                         metadata['tags'] = [reader.metadata['/Subject']]
 
                     return metadata
@@ -118,10 +130,26 @@ class MetadataExtractor:
 
     def _extract_title(self, text: str, filename: str) -> Optional[str]:
         """Extract title from text"""
-        # Try to find first heading
-        heading_match = re.search(r'^#+\s+(.+)$', text, re.MULTILINE)
-        if heading_match:
-            return heading_match.group(1).strip()
+        # Skip mechanically-generated section headers (Slide 1, Page 2, Sheet: X, Image: X) -
+        # they're converter artifacts, not real document titles
+        # mdmax's own converters prefix output with a structural heading
+        # (Page N, Sheet: name, Slide N, Image: name, Extracted Text, SVG Image,
+        # XLS File: name) - none of those are a real document title
+        generic_heading = re.compile(
+            r'^(slide|page)\s*\d*$'
+            r'|^sheet\s*:'
+            r'|^image\s*:'
+            r'|^extracted text$'
+            r'|^svg image$'
+            r'|^xls file\s*:'
+            r'|^json data$',
+            re.IGNORECASE
+        )
+
+        for heading_match in re.finditer(r'^#+\s+(.+)$', text, re.MULTILINE):
+            candidate = heading_match.group(1).strip()
+            if not generic_heading.match(candidate):
+                return candidate
 
         # Fallback to filename
         return Path(filename).stem
@@ -163,11 +191,26 @@ class MetadataExtractor:
     def _extract_summary(self, text: str) -> Optional[str]:
         """Extract first meaningful paragraph as summary"""
         lines = text.split('\n')
+        in_code_fence = False
 
         for line in lines:
             line = line.strip()
-            # Skip headings, empty lines, and formatting
-            if line and not line.startswith('#') and len(line) > 20:
+
+            if line.startswith('```'):
+                in_code_fence = not in_code_fence
+                continue
+            if in_code_fence:
+                continue
+
+            # Skip headings, table rows/separators, frontmatter delimiters,
+            # image embeds, and generated notices - none of those are prose
+            if (line and len(line) > 20
+                    and not line.startswith('#')
+                    and not line.startswith('|')
+                    and not line.startswith('---')
+                    and not line.startswith('===')
+                    and not line.startswith('![')
+                    and not line.startswith('*(')):
                 return line[:150]
 
         return None
