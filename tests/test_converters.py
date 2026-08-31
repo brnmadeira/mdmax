@@ -59,7 +59,7 @@ class TestCSVConversion:
     """Test CSV file conversion"""
 
     def test_csv_to_markdown(self, converter, temp_dir):
-        """Test CSV to Markdown table"""
+        """Test CSV to Markdown (fenced code block, not a pipe-table)"""
         # Create test file
         test_file = temp_dir / "test.csv"
         with open(test_file, 'w') as f:
@@ -73,8 +73,52 @@ class TestCSVConversion:
         # Assert
         assert "Name" in result
         assert "MdMax" in result
-        assert "|" in result  # Markdown table format
-        assert "---" in result  # Table separator
+        assert "```csv" in result
+
+
+class TestTSVConversion:
+    """Test TSV file conversion"""
+
+    def test_tsv_to_markdown(self, converter, temp_dir):
+        """Test TSV to Markdown (fenced block)"""
+        test_file = temp_dir / "test.tsv"
+        test_file.write_text("Name\tVersion\nMdMax\t2.0.0")
+
+        result = converter.tsv_to_markdown(str(test_file))
+
+        assert "Name" in result
+        assert "MdMax" in result
+        assert "```tsv" in result
+
+
+class TestODSConversion:
+    """Test ODS file conversion"""
+
+    def test_ods_to_markdown(self, converter, temp_dir):
+        """Test ODS to Markdown table"""
+        odf = pytest.importorskip("odf.opendocument")
+        from odf.opendocument import OpenDocumentSpreadsheet
+        from odf.table import Table, TableRow, TableCell
+        from odf.text import P
+
+        test_file = temp_dir / "test.ods"
+        doc = OpenDocumentSpreadsheet()
+        table = Table(name="Sheet1")
+        for values in (["Name", "Version"], ["MdMax", "2.0.0"]):
+            row = TableRow()
+            for v in values:
+                cell = TableCell()
+                cell.addElement(P(text=v))
+                row.addElement(cell)
+            table.addElement(row)
+        doc.spreadsheet.addElement(table)
+        doc.save(str(test_file))
+
+        result = converter.ods_to_markdown(str(test_file))
+
+        assert "Name" in result
+        assert "MdMax" in result
+        assert "|" in result
 
 
 class TestImageConversion:
