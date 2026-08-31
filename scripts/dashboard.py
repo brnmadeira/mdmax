@@ -7,23 +7,53 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-ECONOMY_FILE = Path.home() / ".mdmax" / "economy_stats.json"
+ECONOMY_LOG = Path.home() / ".mdmax" / "economy.jsonl"
 
 class DashboardGenerator:
     """Simple dashboard generator"""
-    
+
     def __init__(self):
         self.stats = self.load_stats()
-    
+
     def load_stats(self):
-        """Load economy statistics"""
-        if ECONOMY_FILE.exists():
-            try:
-                with open(ECONOMY_FILE, 'r') as f:
-                    return json.load(f)
-            except:
-                return self.default_stats()
-        return self.default_stats()
+        """Aggregate economy statistics from the conversion log"""
+        if not ECONOMY_LOG.exists():
+            return self.default_stats()
+
+        total_tokens_saved = 0
+        conversions = 0
+        by_format = {}
+        daily_stats = {}
+
+        try:
+            with open(ECONOMY_LOG, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+
+                    conversions += 1
+                    total_tokens_saved += record.get('savings_tokens', 0)
+
+                    fmt = record.get('format', 'unknown')
+                    by_format[fmt] = by_format.get(fmt, 0) + 1
+
+                    day = record.get('timestamp', '')[:10]
+                    if day:
+                        daily_stats[day] = daily_stats.get(day, 0) + record.get('savings_tokens', 0)
+        except OSError:
+            return self.default_stats()
+
+        return {
+            "total_tokens_saved": total_tokens_saved,
+            "conversions": conversions,
+            "by_format": by_format,
+            "daily_stats": daily_stats,
+        }
     
     def default_stats(self):
         """Default empty stats"""
