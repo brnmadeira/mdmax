@@ -22,6 +22,9 @@ requests>=2.25.0
 # Optional: E-book support (install with: pip install mdmax[epub])
 # ebooklib>=0.18.0
 
+# Optional: OpenDocument Spreadsheet support (install with: pip install mdmax[ods])
+# odfpy>=1.4.0
+
 # Optional: Image processing (install with: pip install mdmax[ocr])
 # Pillow>=9.0.0
 # Note: pytesseract requires Tesseract OCR installed on system

@@ -48,6 +48,9 @@ setup(
         "epub": [
             "ebooklib>=0.18.0",
         ],
+        "ods": [
+            "odfpy>=1.4.0",
+        ],
         "ocr": [
             "Pillow>=9.0.0",
         ],
@@ -56,6 +59,7 @@ setup(
             "uvicorn>=0.20.0",
             "pydantic>=1.10.0",
             "ebooklib>=0.18.0",
+            "odfpy>=1.4.0",
             "Pillow>=9.0.0",
             "pytest>=7.0.0",
             "pytest-cov>=4.0.0",
