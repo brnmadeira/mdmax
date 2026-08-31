@@ -72,39 +72,85 @@ class MarkdownConverter:
         return "\n".join(markdown_lines)
 
     def csv_to_markdown(self, file_path: str) -> str:
-        """Convert CSV to Markdown table"""
-        markdown_lines = []
+        """Convert CSV to Markdown as a fenced code block
 
+        A pipe-table pads every cell with " | " and adds a full separator row,
+        which costs more bytes than the CSV it's rendering for wide/long files.
+        A fenced block keeps the original density and is just as LLM-readable.
+        """
         with open(file_path, 'r', encoding='utf-8-sig') as f:
-            reader = csv.reader(f)
-            rows = list(reader)
+            content = f.read().rstrip('\n')
+
+        return f"```csv\n{content}\n```"
+
+    def tsv_to_markdown(self, file_path: str) -> str:
+        """Convert TSV to Markdown as a fenced code block (mirrors csv_to_markdown)"""
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
+            content = f.read().rstrip('\n')
+
+        return f"```tsv\n{content}\n```"
+
+    def ods_to_markdown(self, file_path: str) -> str:
+        """Convert ODS (OpenDocument Spreadsheet) to Markdown tables"""
+        try:
+            from odf.opendocument import load
+            from odf.table import Table, TableRow, TableCell
+            from odf.text import P
+        except ImportError:
+            raise ImportError("odfpy not installed. Run: pip install odfpy")
+
+        def cell_text(cell) -> str:
+            return ''.join(str(p) for p in cell.getElementsByType(P))
+
+        def expanded_row(row) -> list:
+            values = []
+            for cell in row.getElementsByType(TableCell):
+                repeat = cell.getAttribute('numbercolumnsrepeated')
+                repeat = int(repeat) if repeat else 1
+                values.extend([cell_text(cell)] * repeat)
+            # trailing empty cells are often collapsed into one big repeat - drop them
+            while values and not values[-1].strip():
+                values.pop()
+            return values
+
+        markdown_lines = []
+        doc = load(file_path)
+
+        for table in doc.spreadsheet.getElementsByType(Table):
+            sheet_name = table.getAttribute('name') or 'Sheet'
+            markdown_lines.append(f"## Sheet: {sheet_name}\n")
+
+            rows = [expanded_row(r) for r in table.getElementsByType(TableRow)]
+            rows = [r for r in rows if r]
 
             if rows:
-                # Headers
                 headers = rows[0]
                 markdown_lines.append("| " + " | ".join(headers) + " |")
                 markdown_lines.append("| " + " | ".join("---" for _ in headers) + " |")
 
-                # Data rows
                 for row in rows[1:]:
-                    if len(row) != len(headers):
+                    if len(row) < len(headers):
                         row = row + [""] * (len(headers) - len(row))
+                    elif len(row) > len(headers):
+                        row = row[:len(headers)]
                     markdown_lines.append("| " + " | ".join(row) + " |")
+
+            markdown_lines.append("\n")
 
         return "\n".join(markdown_lines)
 
     def json_to_markdown(self, file_path: str) -> str:
-        """Convert JSON to Markdown (formatted JSON block)"""
+        """Convert JSON to Markdown as a compact fenced code block
+
+        Pretty-printing (indent=2) and ensure_ascii escaping of every accented
+        character can make the output bigger than the source. Compact,
+        UTF-8-preserving serialization avoids both.
+        """
         with open(file_path, 'r', encoding='utf-8-sig') as f:
             data = json.load(f)
 
-        markdown = f"""# JSON Data
-
-```json
-{json.dumps(data, indent=2)}
-```
-"""
-        return markdown
+        compact = json.dumps(data, separators=(',', ':'), ensure_ascii=False)
+        return f"```json\n{compact}\n```"
 
     def txt_to_markdown(self, file_path: str) -> str:
         """Convert TXT to Markdown (passthrough)"""
@@ -198,8 +244,8 @@ Original error: {str(e)}
                 markdown += text
         except ImportError:
             markdown += "*(Install pytesseract + Tesseract for OCR support)*\n"
-        except Exception:
-            pass
+        except Exception as e:
+            markdown += f"*(OCR unavailable: {e})*\n"
 
         return markdown
 
@@ -208,6 +254,7 @@ Original error: {str(e)}
     def epub_to_markdown(self, file_path: str) -> str:
         """Convert EPUB to Markdown"""
         try:
+            import ebooklib
             from ebooklib import epub
         except ImportError:
             raise ImportError("ebooklib not installed. Run: pip install ebooklib")
@@ -216,7 +263,9 @@ Original error: {str(e)}
         book = epub.read_epub(file_path)
 
         for item in book.get_items():
-            if item.get_type() == 3:  # XHTML document
+            # is_chapter() excludes the auto-generated nav/ToC document, which is
+            # also ITEM_DOCUMENT but not real book content
+            if item.get_type() == ebooklib.ITEM_DOCUMENT and item.is_chapter():
                 content = item.get_content().decode('utf-8')
                 # Simple strip HTML tags
                 text = re.sub(r'<[^>]+>', '', content)
