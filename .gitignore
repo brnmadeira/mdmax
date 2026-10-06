@@ -169,3 +169,7 @@ secrets.json
 .vault/
 .token
 .tokens/
+
+# Build outputs (attached to GitHub releases, not committed)
+dist/
+.pytest_cache/

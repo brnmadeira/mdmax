@@ -1,0 +1,19 @@
+{
+  "name": "mdmax",
+  "owner": {
+    "name": "Bruno Madeira",
+    "url": "https://github.com/brnmadeira"
+  },
+  "metadata": {
+    "description": "mdmax: documents as compact text for Claude, with the tokens saved."
+  },
+  "plugins": [
+    {
+      "name": "mdmax",
+      "source": "./",
+      "description": "Reads PDF, Word, Excel, PowerPoint, OpenDocument and EPUB files as compact text, so Claude spends far fewer tokens on them, and reports the tokens saved.",
+      "category": "productivity",
+      "keywords": ["tokens", "pdf", "excel", "word", "markdown"]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "mdmax",
+  "displayName": "mdmax",
+  "version": "4.0.0",
+  "description": "Reads PDF, Word, Excel, PowerPoint, OpenDocument and EPUB files as compact text, so Claude spends far fewer tokens on them, and reports the tokens saved.",
+  "author": {
+    "name": "Bruno Madeira",
+    "url": "https://github.com/brnmadeira"
+  },
+  "homepage": "https://github.com/brnmadeira/mdmax",
+  "repository": "https://github.com/brnmadeira/mdmax",
+  "license": "MIT",
+  "keywords": ["tokens", "pdf", "excel", "word", "markdown", "context", "cost"]
+}
